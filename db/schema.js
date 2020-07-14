@@ -5,7 +5,10 @@ var Schema = mongoose.Schema;
 const UserSchema = new Schema({
     username: {
         type: String,
-        required: [true, "Username is required"]
+        required: [true, "Username is required"],
+        index: {
+            unique: true
+        }
     },
     password: {
         type: String,
@@ -22,7 +25,7 @@ const UserSchema = new Schema({
 exports.UserSchema = mongoose.model('User', UserSchema);
 
 // The current valid JWT tokens
-const CurrentUsers = new Schema({
+const CurrentUsersSchema = new Schema({
     user: {
         type: Schema.Types.ObjectId,
         required: [true, 'Token must belong to user']
@@ -33,7 +36,7 @@ const CurrentUsers = new Schema({
     }
 });
 
-exports.CurrentUsersSchema = mongoose.model('currentUser', this.CurrentUsersSchema);
+exports.CurrentUserSchema = mongoose.model('currentUser', CurrentUsersSchema);
 
 // Schema that defines the quotes
 var QuoteSchema = new Schema({

@@ -46,7 +46,7 @@ router.get('/', function(req, res, next) {
 // Gets a random quote
 router.get('/random', function(req, res, next) {
     // Count all rows in the quotes collection
-    Quote.count().exec(function (err, count) {
+    Quote.countDocuments().exec(function (err, count) {
         // ON error, return database failure
         if (err) { 
             res.status(500).json({
@@ -70,10 +70,18 @@ router.get('/random', function(req, res, next) {
 
             // Return the results
             console.log("Got: " + quote);
-            res.status(200).json({
-                text: quote.text,
-                by: quote.by
-            });
+            if (quote) {
+                res.status(200).json({
+                    text: quote.text,
+                    by: quote.by
+                });
+            } else {
+                res.status(500).json({
+                    error: true,
+                    message: "Internal Server Error"
+                })
+            }
+
         });
     });
 });

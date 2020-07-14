@@ -38,7 +38,7 @@ app.use((req, res, next) => {
 // Actual rendering of the quotes
 app.use('/quote', quoteRouter);
 // User functions
-app.use('/user', quoteRouter);
+app.use('/user', userRouter);
 
 // Swagger docs for the API
 app.use('/api', apiRouter);
