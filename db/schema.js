@@ -24,20 +24,6 @@ const UserSchema = new Schema({
 
 exports.UserSchema = mongoose.model('User', UserSchema);
 
-// The current valid JWT tokens
-const CurrentUsersSchema = new Schema({
-    user: {
-        type: Schema.Types.ObjectId,
-        required: [true, 'Token must belong to user']
-    },
-    token: {
-        type: String,
-        required: [true, 'Must set token']
-    }
-});
-
-exports.CurrentUserSchema = mongoose.model('currentUser', CurrentUsersSchema);
-
 // Schema that defines the quotes
 var QuoteSchema = new Schema({
     text: {
@@ -45,12 +31,16 @@ var QuoteSchema = new Schema({
         required: [true, "A man must have said something"]
     },
     by: {
-        type: String
+        type: String,
+        default: "Anonymous"
+    },
+    year: {
+        type: Number
     },
     // ID of the user that uploaded the quote
     creator: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: [true, 'Missing quote Uploader'] 
+        type: String,
+        required: [true, 'Missing Quote Creator Field'] 
     },
     public: {
         type: Boolean,

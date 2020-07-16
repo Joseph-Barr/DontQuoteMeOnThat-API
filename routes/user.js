@@ -58,7 +58,8 @@ router.post('/login', function(req, res, next) {
           // Generate token using SECRET_KEY
           const expiresIn = 60 * 60 * 24;
           const expiry = Math.floor(Date.now() / 1000) + expiresIn;
-          const token = jwt.sign({username, expiry}, process.env.SECRET_KEY);
+          const userID = user._id;
+          const token = jwt.sign({userID, expiry}, process.env.SECRET_KEY);
 
           // Send Token
           res.status(200).json({

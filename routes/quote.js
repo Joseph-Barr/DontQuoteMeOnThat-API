@@ -14,7 +14,7 @@ router.get('/', function(req, res, next) {
     if (quoteReq) {
         Quote.find({text: new RegExp('' + quoteReq + '')}).exec(function(err, quotes) {
             if (err) { 
-                    res.status(500).json({
+                res.status(500).json({
                     error: true,
                     message: "Internal Server Error"
                 });
@@ -38,7 +38,18 @@ router.get('/', function(req, res, next) {
 
         
     } else {
-        res.status(404).json({error: true, message: 'Enter a quote as part of the HTTP Request Body'});
+        Quote.find({}, '_id text by year creator public').limit(100).exec(function(err, quotes) {
+            if (err) {
+                res.status(500).json({
+                    error: true,
+                    message: "Internal Server Error"
+                });
+            }
+
+            res.status(200).json({
+                quotes: quotes
+            });
+        });
     }
 }); 
 
@@ -94,7 +105,8 @@ router.get('/:id', function(req, res, next) {
 // Authenticated route middleman verification
 const authenticate = (req, res, next) => {
     // Check the provided web token
-    const authorisation = req.header.authorisation;
+    const authorisation = req.header('Authorization');
+    console.log(authorisation);
     let token = null;
 
     // Token validation
@@ -118,6 +130,9 @@ const authenticate = (req, res, next) => {
             });
             return;
         } 
+
+        // Add the user ID to the req
+        res.locals.userID = decoded.userID;
         // End the middleware function and move to the authorised routes
         next();
     } catch (err) {
@@ -128,12 +143,13 @@ const authenticate = (req, res, next) => {
     }
 };
 
-// router.use(authenticate);
+router.use(authenticate);
 
-router.post("/create", function (req, res, next) {
+router.post("/create", function(req, res, next) {
     // Create a quote
     const text = req.body.text;
     const by = req.body.by;
+    const year = req.body.year;
     let public = false;
     if (req.body.public) {
         public = true;
@@ -145,14 +161,18 @@ router.post("/create", function (req, res, next) {
     let newQuote = new Quote({
         text: text,
         by: by,
+        creator: res.locals.userID,
         public: public
     });
+
     newQuote.save(function (err, quote) {
         if (err) {
+            console.log(err);
             res.status(500).json({
                 error: true,
                 message: "Internal Server Error"
             });
+            return;
         }
 
         res.status(200).json({
@@ -161,5 +181,17 @@ router.post("/create", function (req, res, next) {
         });
     });
 });
+
+// POST request to list all the quotes from a user
+router.post("/list", function(req, res, next) {
+    let listingUser = req.body.user;
+    if (!listingUser) {
+        listingUser = res.locals.userID;
+    }
+
+
+});
+
+
 
 module.exports = router;
