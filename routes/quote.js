@@ -84,7 +84,8 @@ router.get('/random', function(req, res, next) {
             if (quote) {
                 res.status(200).json({
                     text: quote.text,
-                    by: quote.by
+                    by: quote.by,
+                    year: quote.year
                 });
             } else {
                 res.status(500).json({
@@ -99,14 +100,38 @@ router.get('/random', function(req, res, next) {
 
 // GET /quote/{id} page
 router.get('/:id', function(req, res, next) {
-    res.render('index', { title: '/quote/'+ req.params.id +'' });
+    const quoteID = req.params.id;
+
+    Quote.findOne({_id: quoteID}, 'text creator by year public').exec((err, quote) => {
+        if (err) {
+            res.status(500).json({
+                error: true,
+                message: 'Internal Server Error'
+            });
+            return;
+        }
+
+        // Send the found quote
+        if (quote) {
+            res.status(200).json({
+                quote: quote
+            })
+        } else {
+            res.status(404).json({
+                error: true,
+                message: 'Quote not found'
+            })
+        }
+    });
+
 });
 
 // Authenticated route middleman verification
 const authenticate = (req, res, next) => {
     // Check the provided web token
-    const authorisation = req.header('Authorization');
-    console.log(authorisation);
+    const authorisation = req.headers.authorization;
+    console.log(JSON.stringify(req.headers));
+    console.log(authorisation)
     let token = null;
 
     // Token validation
@@ -181,7 +206,7 @@ router.post("/create", function(req, res, next) {
         });
     });
 });
-
+/*
 // POST request to list all the quotes from a user
 router.post("/list", function(req, res, next) {
     let listingUser = req.body.user;
@@ -191,6 +216,29 @@ router.post("/list", function(req, res, next) {
 
 
 });
+*/
+
+// GET all the quotes created by a given user ID. The user ID is stored in the provided token
+router.get('/user/all', function(req, res, next) {
+    const user = res.locals.userID;
+
+    Quote.find({creator: user}).exec((err, quotes) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({
+                error: true,
+                message: "Internal Server Error"
+            });
+            return;
+        }
+
+        // Quotes have been located
+        res.status(200).json({
+            user: user,
+            quotes: quotes
+        })
+    });
+})
 
 
 

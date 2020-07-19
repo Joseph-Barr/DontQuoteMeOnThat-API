@@ -18,6 +18,7 @@ const verifyLoginBody = (req, res, next) => {
       error: true,
       message: 'Invalid Header: Make sure Username and Password are complete'
     });
+    return;
   }
   next();
 };
@@ -67,18 +68,21 @@ router.post('/login', function(req, res, next) {
             token: token,
             expires_in: expiresIn
           });
+          return;
         }).catch(err => {
           console.log(err)
           res.status(500).json({
             error: true,
             message: "Internal Server Error"
           });
+          return;
         })
       } else {
         res.status(401).json({
           error: true,
           message: 'Incorrect Email or Password'
         });
+        return;
       }
   });
 });
