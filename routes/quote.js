@@ -275,9 +275,13 @@ router.use('/:modification(edit|delete)/:id', (req, res, next) => {
             });
             return;
         }
-    })
 
-    // The user must own the data they are trying to modify
+        // The user must own the data they are trying to modify
+        console.log(res.headersSent)
+        if (!(res.headersSent)) {
+            next();
+        }
+    });
 });
 
 //router.use(ownership);
