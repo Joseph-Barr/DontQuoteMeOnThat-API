@@ -238,7 +238,7 @@ router.get('/user/all', function(req, res, next) {
 })
 
 // For routes that require ownership of the modified data, this function verifies that the user has permission to modify it
-router.use((req, res, next) => {
+router.use('/:modification(edit|delete)/:id', (req, res, next) => {
     const quoteID = req.params.id;
     if (!quoteID) {
         res.status(400).json({
