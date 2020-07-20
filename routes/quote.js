@@ -80,7 +80,6 @@ router.get('/random', function(req, res, next) {
             }
 
             // Return the results
-            console.log("Got: " + quote);
             if (quote) {
                 res.status(200).json({
                     text: quote.text,
@@ -130,8 +129,6 @@ router.get('/:id', function(req, res, next) {
 const authenticate = (req, res, next) => {
     // Check the provided web token
     const authorisation = req.headers.authorization;
-    console.log(JSON.stringify(req.headers));
-    console.log(authorisation)
     let token = null;
 
     // Token validation
@@ -139,7 +136,7 @@ const authenticate = (req, res, next) => {
     if (authorisation && splAuthorisation.length == 2) {
         token = splAuthorisation[1];
     } else {
-        res.status(403).json({
+        res.status(401).json({
             error: true,
             message: "Authorisation header not found"
         });
@@ -149,7 +146,7 @@ const authenticate = (req, res, next) => {
     try {
         const decoded = jwt.verify(token, process.env.SECRET_KEY);
         if (decoded.expiry > Date.now()) {
-            res.status(403).json({
+            res.status(401).json({
                 error: true,
                 message: "Authorisation header not found"
             });
@@ -239,6 +236,124 @@ router.get('/user/all', function(req, res, next) {
         })
     });
 })
+
+// For routes that require ownership of the modified data, this function verifies that the user has permission to modify it
+router.use((req, res, next) => {
+    const quoteID = req.params.id;
+    if (!quoteID) {
+        res.status(400).json({
+            error: true,
+            message: 'Missing Quote ID Param. Example: /quote/edit/aaaaaa1111111'
+        });
+        return;
+    }
+
+    Quote.findOne({_id: quoteID}, 'creator').exec((err, quote) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({
+                error: true,
+                message: 'Internal Server Error'
+            });
+            return;
+        }
+
+        // Check if an object was actually returned
+        if (quote === null) {
+            res.status(404).json({
+                error: true,
+                message: 'Quote not found'
+            });
+            return;
+        }
+
+        // Verify the obtained data matches the request
+        if (quote.creator !== res.locals.userID) {
+            res.status(401).json({
+                error: true,
+                message: 'Unauthorized action'
+            });
+            return;
+        }
+    })
+
+    // The user must own the data they are trying to modify
+});
+
+//router.use(ownership);
+
+// DELETE a quote
+router.delete('/delete/:id', (req, res, next) => {
+    const quoteID = req.params.id;
+    if (!quoteID) {
+        res.status(400).json({
+            error: true,
+            message: 'Invalid quote ID'
+        });
+    }
+
+    Quote.findOneAndRemove({_id: quoteID}).exec((err, quote) => {
+        if (err) {
+            res.status(500).json({
+                error: true,
+                message: 'Internal Server Error'
+            });
+            return;
+        }
+
+        // No quote has been deleted
+            // NOTE: This if should never be TRUE as the ownership middleware checks that the quoteID is always valid
+        if (quote == null) {
+            res.status(404).json({
+                error: true,
+                deleted: false,
+                message: 'Quote Not Found'
+            });
+            return;
+        }
+
+        res.status(200).json({
+            deleted: true,
+            quote: quote
+        });
+        return;
+    });
+});
+
+// POST Edit a quote
+router.post('/edit/:id', (req, res, next) => {
+    const newText = req.body.text;
+    const newBy = req.body.by;
+    const newYear = req.body.year;
+    const newPub = req.body.public;
+
+    // Create new quote object
+    let newQuote = {
+        text: newText,
+        by: newBy,
+        year: newYear,
+        public: newPub
+    }
+
+    // Remove all undefined values from the new quote
+    Object.keys(newQuote).forEach(key => newQuote[key] === undefined && delete newQuote[key]);
+
+    Quote.findOneAndUpdate({_id: req.params.id}, newQuote).exec((err, quote) => {
+        if (err) {
+            res.status(500).json({
+                error: true,
+                message: 'Internal Server Error'
+            });
+            return;
+        }
+
+        res.status(200).json({
+            updated: quote,
+            values: newQuote
+        })
+    });
+});
+
 
 
 

@@ -125,7 +125,7 @@ router.post('/register', function(req, res, next) {
           }
 
           // Send success
-          res.status(200).json({
+          res.status(201).json({
               inserted: true,
               user: 
               {
