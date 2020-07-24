@@ -176,16 +176,22 @@ router.post("/create", function(req, res, next) {
     if (req.body.public) {
         public = true;
     }
-    // Check that the query doesnt already exist
-        // Check whether an extremely similar query exists
+    // Check that the quote doesnt already exist
+        // Check whether an extremely similar quote exists
 
-    // Create the new quote
-    let newQuote = new Quote({
+    let newQuoteValues = {
         text: text,
         by: by,
         creator: res.locals.userID,
-        public: public
-    });
+        public: public,
+        year: year
+    }
+
+    // Remove all undefined values from the new quote
+    Object.keys(newQuoteValues).forEach(key => newQuoteValues[key] === undefined && delete newQuoteValues[key]);
+
+    // Create the new quote
+    let newQuote = new Quote(newQuoteValues);
 
     newQuote.save(function (err, quote) {
         if (err) {
@@ -284,8 +290,6 @@ router.use('/:modification(edit|delete)/:id', (req, res, next) => {
     });
 });
 
-//router.use(ownership);
-
 // DELETE a quote
 router.delete('/delete/:id', (req, res, next) => {
     const quoteID = req.params.id;
@@ -298,6 +302,7 @@ router.delete('/delete/:id', (req, res, next) => {
 
     Quote.findOneAndRemove({_id: quoteID}).exec((err, quote) => {
         if (err) {
+            console.log(err);
             res.status(500).json({
                 error: true,
                 message: 'Internal Server Error'
