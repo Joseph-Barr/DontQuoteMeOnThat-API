@@ -239,9 +239,9 @@ router.get('/user/all', function(req, res, next) {
         res.status(200).json({
             user: user,
             quotes: quotes
-        })
+        });
     });
-})
+});
 
 // For routes that require ownership of the modified data, this function verifies that the user has permission to modify it
 router.use('/:modification(edit|delete)/:id', (req, res, next) => {
@@ -283,7 +283,6 @@ router.use('/:modification(edit|delete)/:id', (req, res, next) => {
         }
 
         // The user must own the data they are trying to modify
-        console.log(res.headersSent)
         if (!(res.headersSent)) {
             next();
         }
@@ -342,7 +341,7 @@ router.post('/edit/:id', (req, res, next) => {
         by: newBy,
         year: newYear,
         public: newPub
-    }
+    };
 
     // Remove all undefined values from the new quote
     Object.keys(newQuote).forEach(key => newQuote[key] === undefined && delete newQuote[key]);
@@ -359,7 +358,7 @@ router.post('/edit/:id', (req, res, next) => {
         res.status(200).json({
             updated: quote,
             values: newQuote
-        })
+        });
     });
 });
 
