@@ -14,6 +14,11 @@ var userRouter = require('./routes/user');
 
 var app = express();
 
+// Swagger docs imports
+const yaml = require('yamljs');
+const swaggerUI = require('swagger-ui-express');
+const swaggerDocument = yaml.load('./swaggerDOCS.yaml');
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -45,7 +50,8 @@ app.use('/quote', quoteRouter);
 app.use('/user', userRouter);
 
 // Swagger docs for the API
-app.use('/api', apiRouter);
+app.use('/api', swaggerUI.serve);
+app.get('/api', swaggerUI.setup(swaggerDocument));
 
 // Index
 app.use('/', indexRouter);

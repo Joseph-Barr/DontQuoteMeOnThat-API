@@ -1,0 +1,251 @@
+openapi: 3.0.1
+info:
+  title: Dont Quote Me On That
+  version: '0.1'
+  description: API to quote your friends on stuff they probably shouldn't have said
+servers:
+  - url: 'http://localhost:3001'
+paths:
+  /quote/user/all:
+    get:
+      description: Gets all quotes submitted by the current user
+      responses:
+        '200':
+          description: Returns array of quotes made by the user
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: string
+              examples: {}
+        '401':
+            description: The authorization header is invalid
+            content:
+              application/json; charset=utf-8:
+                schema:
+                  type: object
+                    properties:
+                      error:
+                          type: boolean
+                      message:
+                          type: string
+                examples: {}
+        
+      servers:
+        - url: 'http://localhost:3001'
+    servers:
+      - url: 'http://localhost:3001'
+  /quote/delete/{id}:
+    delete:
+      description: Deletes the quote with the matched ID
+      responses:
+        '200':
+          description: Quote was deleted. Returns the deleted quote
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: string
+              examples: {}
+        '401':
+          description: The authorization header is invalid
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: object
+                  properties:
+                    error:
+                        type: boolean
+                    message:
+                        type: string
+              examples: {}
+      servers:
+        - url: 'http://localhost:3001'
+    servers:
+      - url: 'http://localhost:3001'
+  /quote/random:
+    get:
+      description: Gets a random quote
+      responses:
+        '200':
+          description: Returns the given quote
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: string
+              examples: {}
+      servers:
+        - url: 'http://localhost:3001'
+    servers:
+      - url: 'http://localhost:3001'
+  /user/login:
+    post:
+      description: Login request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                username:
+                  type: string
+            examples:
+              '0':
+                value: |-
+                  {
+                      "username": "Test User",
+                      "password": "password"
+                  }
+      responses:
+        '200':
+          description: Login successful. Returns information about the JWT token
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: string
+              examples: {}
+      servers:
+        - url: 'http://localhost:3001'
+    servers:
+      - url: 'http://localhost:3001'
+  /quote/edit/{id}:
+    post:
+      description: Edits the quote with the matched ID. User must present JWT
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+            examples:
+              '0':
+                value: |-
+                  {
+                      "text": "Example Quote Edited"
+                  }
+      responses:
+        '200':
+          description: Quote successfully edited. Returns the old quote and the newly modified field values
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: object
+                properties:
+                  _id:
+                    type: string
+
+              examples: {}
+      servers:
+        - url: 'http://localhost:3001'
+    servers:
+      - url: 'http://localhost:3001'
+  /quote/create:
+    post:
+      description: Auto generated using Swagger Inspector
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                year:
+                  type: integer
+                by:
+                  type: string
+                text:
+                  type: string
+            examples:
+              '0':
+                value: |-
+                  {
+                      "text": "Example Quote",
+                      "by": "Example",
+                      "year": 2020
+                  }
+      responses:
+        '200':
+          description: Auto generated using Swagger Inspector
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: string
+              examples: {}
+      servers:
+        - url: 'http://localhost:3001'
+    servers:
+      - url: 'http://localhost:3001'
+  /user/register:
+    post:
+      description: Auto generated using Swagger Inspector
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                username:
+                  type: string
+            examples:
+              '0':
+                value: |-
+                  {
+                      "username": "Test User",
+                      "password": "password"
+                  }
+      responses:
+        '201':
+          description: Auto generated using Swagger Inspector
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: string
+              examples: {}
+      servers:
+        - url: 'http://localhost:3001'
+    servers:
+      - url: 'http://localhost:3001'
+  /quote/{id}:
+    get:
+      description: Auto generated using Swagger Inspector
+      responses:
+        '200':
+          description: Auto generated using Swagger Inspector
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: string
+              examples: {}
+      servers:
+        - url: 'http://localhost:3001'
+    servers:
+      - url: 'http://localhost:3001'
+  /quote:
+    get:
+      description: Gets all the first 100 quotes matched quotes. 
+      parameters:
+        - name: quote
+          in: query
+          schema:
+            type: string
+          example: Suck
+      responses:
+        '200':
+          description: Auto generated using Swagger Inspector
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: string
+              examples: {}
+      servers:
+        - url: 'http://localhost:3001'
+    servers:
+      - url: 'http://localhost:3001'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer

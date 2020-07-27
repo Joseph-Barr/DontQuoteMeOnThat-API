@@ -9,7 +9,7 @@ var Quote = QuoteSchema.QuoteSchema;
 /* GET /quote Page */
 // TODO: Need a better search method
 router.get('/', function(req, res, next) {
-    const quoteReq = req.body.quote;
+    const quoteReq = req.query.quote;
     // Get the quote from the query parameters
     if (quoteReq) {
         Quote.find({text: new RegExp('' + quoteReq + '')}).exec(function(err, quotes) {
@@ -132,7 +132,20 @@ const authenticate = (req, res, next) => {
     let token = null;
 
     // Token validation
-    let splAuthorisation = authorisation.split(" ");
+    try {
+        let splAuthorisation = authorisation.split(" ");
+    } catch (err) {
+        console.log(err);
+        if (err instanceof TypeError) {
+            res.status(401).json({
+                error: true,
+                message: "Invalid Authorisation Header"
+            });
+            return;
+        }
+    }
+
+    
     if (authorisation && splAuthorisation.length == 2) {
         token = splAuthorisation[1];
     } else {
