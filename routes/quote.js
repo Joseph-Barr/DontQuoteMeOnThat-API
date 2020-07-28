@@ -129,11 +129,13 @@ router.get('/:id', function(req, res, next) {
 const authenticate = (req, res, next) => {
     // Check the provided web token
     const authorisation = req.headers.authorization;
+    console.log(req.headers);
     let token = null;
 
     // Token validation
+    let splAuthorisation = '';
     try {
-        let splAuthorisation = authorisation.split(" ");
+        splAuthorisation = authorisation.split(" ");
     } catch (err) {
         console.log(err);
         if (err instanceof TypeError) {
@@ -144,7 +146,6 @@ const authenticate = (req, res, next) => {
             return;
         }
     }
-
     
     if (authorisation && splAuthorisation.length == 2) {
         token = splAuthorisation[1];
