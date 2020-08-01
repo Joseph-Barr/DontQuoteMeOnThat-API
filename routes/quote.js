@@ -129,7 +129,6 @@ router.get('/:id', function(req, res, next) {
 const authenticate = (req, res, next) => {
     // Check the provided web token
     const authorisation = req.headers.authorization;
-    console.log(req.headers);
     let token = null;
 
     // Token validation
