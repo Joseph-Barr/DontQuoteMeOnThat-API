@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www",
-    "start-dev": "DEBUG=express:* node ./bin/www",
+    "start": "NODE_ENV=prod node ./bin/www",
+    "start-dev": "NODE_ENV=dev DEBUG=express:* node ./bin/www",
     "transpile": "babel ./server --out-dir dist-server"
   },
   "dependencies": {
@@ -14,6 +14,7 @@
     "bcrypt": "^5.0.0",
     "cookie-parser": "~1.4.4",
     "cors": "^2.8.5",
+    "custom-env": "^2.0.1",
     "debug": "~2.6.9",
     "express": "~4.16.1",
     "helmet": "^3.23.3",
