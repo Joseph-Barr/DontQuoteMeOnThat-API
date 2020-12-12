@@ -34,8 +34,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // DB Stuff
   //Set up default mongoose connection
-var mongoDB = 'mongodb://127.0.0.1/quotes';
-mongoose.connect(mongoDB, { useNewUrlParser: true });
+mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/test", { useNewUrlParser: true });
   //Get the default connection
 var db = mongoose.connection;
   //Bind connection to error event (to get notification of connection errors)
