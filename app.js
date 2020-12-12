@@ -4,9 +4,12 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const customEnv = require('custom-env').env(true)
-const mongoose = require('mongoose');
 const helmet = require('helmet');
 const cors = require('cors');
+
+// Database engine
+const { Pool, Client } = require('pg');
+
 
 var indexRouter = require('./routes/index');
 var apiRouter = require('./routes/api');
@@ -33,16 +36,20 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // DB Stuff
-  //Set up default mongoose connection
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/test", { useNewUrlParser: true });
-  //Get the default connection
-var db = mongoose.connection;
-  //Bind connection to error event (to get notification of connection errors)
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-app.use((req, res, next) => {
-	req.db = db;
-	next();
-});
+// Let the webapp call to create Pool requests in Postgres
+const dbPool = new Pool();
+// Pass dbPool down the middleware stack
+app.use(function (req, res, next) {
+  res.locals.dbPool = dbPool;
+  next()
+})
+
+// The pool will emit an error on behalf of any idle clients; it contains if a backend error or network partition happens
+dbPool.on('error', (err, client) => {
+  console.error('Unexpected error on idle client', err)
+  process.exit(-1)
+})
+
 
 // Actual rendering of the quotes
 app.use('/quote', quoteRouter);
