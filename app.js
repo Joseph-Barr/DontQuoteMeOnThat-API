@@ -9,6 +9,7 @@ const cors = require('cors');
 
 // Database engine
 const { Pool, Client } = require('pg');
+const dbConnectionURL = process.env.DATABASE_URL;
 
 
 var indexRouter = require('./routes/index');
@@ -37,7 +38,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // DB Stuff
 // Let the webapp call to create Pool requests in Postgres
-const dbPool = new Pool();
+const dbPool = new Pool({
+  dbConnectionURL,
+});
 // Pass dbPool down the middleware stack
 app.use(function (req, res, next) {
   res.locals.dbPool = dbPool;
