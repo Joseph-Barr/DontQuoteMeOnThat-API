@@ -1,10 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var QuoteSchema = require('../db/schema');
 var jwt = require('jsonwebtoken');
-
-// The schema to be used by mongoose to form the DB requests
-var Quote = QuoteSchema.QuoteSchema;
 
 /* GET /quote Page */
 // TODO: Need a better search method
@@ -12,42 +8,60 @@ router.get('/', function(req, res, next) {
     const quoteReq = req.query.quote;
     // Get the quote from the query parameters
     if (quoteReq) {
-        Quote.find({text: new RegExp('' + quoteReq + '')}).exec(function(err, quotes) {
-            if (err) { 
+        // Find like quotes
+        res.locals.dbPool
+        .connect()
+        .then(client => {
+            return client
+            .query('SELECT * FROM quotes WHERE id LIKE %$1%', [1])
+            .then(query => {
+                client.release()
+                let quotes = query.rows;
+                // Aggregate results into a json object removing the _id field
+                const noIdQuotes = quotes.map(quote => {
+                    return {
+                        text: quote.text,
+                        by: quote.by
+                    };
+                });
+
+                // Send results
+                res.status(200).json({
+                    quoteReq: quoteReq,
+                    quotes: noIdQuotes
+                });
+            })
+            .catch(err => {
+                client.release()
+                console.log(err.stack)
                 res.status(500).json({
                     error: true,
                     message: "Internal Server Error"
                 });
                 return handleError(err); 
-            }
-            
-            // Aggregate results into a json object removing the _id field
-            const noIdQuotes = quotes.map(quote => {
-                return {
-                    text: quote.text,
-                    by: quote.by
-                };
-            });
-
-            // Send results
-            res.status(200).json({
-                quoteReq: quoteReq,
-                quotes: noIdQuotes
             });
         });
-
         
     } else {
-        Quote.find({}, '_id text by year creator public').limit(100).exec(function(err, quotes) {
-            if (err) {
+        res.locals.dbPool
+        .connect()
+        .then(client => {
+            return client
+            .query('SELECT * FROM quotes LIMIT 100')
+            .then(query => {
+                client.release()
+                let quotes = query.rows;
+                res.status(200).json({
+                    quotes: quotes
+                });
+            })
+            .catch(err => {
+                client.release()
+                console.log(err.stack)
                 res.status(500).json({
                     error: true,
                     message: "Internal Server Error"
                 });
-            }
-
-            res.status(200).json({
-                quotes: quotes
             });
         });
     }
@@ -55,22 +69,13 @@ router.get('/', function(req, res, next) {
 
 // GET /quote/random
 // Gets a random quote
-router.get('/random', function(req, res, next) {
-    // Count all rows in the quotes collection
-    Quote.countDocuments().exec(function (err, count) {
-        // ON error, return database failure
-        if (err) { 
-            res.status(500).json({
-                error: true,
-                message: "Internal Server Error"
-            });
-            return handleError(err); 
-        }
-        // Generate a random number that will be used to select a random  
-        const randomNum = Math.floor(Math.random() * count);
-
-        // Get the random result
-        Quote.findOne().skip(randomNum).exec(function(err, quote) {
+// @depreciated
+// Currently removed from functionality as its use is limited and complex to implement currently
+/*
+    router.get('/random', function(req, res, next) {
+        // Count all rows in the quotes collection
+        Quote.countDocuments().exec(function (err, count) {
+            // ON error, return database failure
             if (err) { 
                 res.status(500).json({
                     error: true,
@@ -78,51 +83,70 @@ router.get('/random', function(req, res, next) {
                 });
                 return handleError(err); 
             }
+            // Generate a random number that will be used to select a random  
+            const randomNum = Math.floor(Math.random() * count);
 
-            // Return the results
-            if (quote) {
-                res.status(200).json({
-                    text: quote.text,
-                    by: quote.by,
-                    year: quote.year
-                });
-            } else {
-                res.status(500).json({
-                    error: true,
-                    message: "Internal Server Error"
-                })
-            }
+            // Get the random result
+            Quote.findOne().skip(randomNum).exec(function(err, quote) {
+                if (err) { 
+                    res.status(500).json({
+                        error: true,
+                        message: "Internal Server Error"
+                    });
+                    return handleError(err); 
+                }
 
+                // Return the results
+                if (quote) {
+                    res.status(200).json({
+                        text: quote.text,
+                        by: quote.by,
+                        year: quote.year
+                    });
+                } else {
+                    res.status(500).json({
+                        error: true,
+                        message: "Internal Server Error"
+                    })
+                }
+
+            });
         });
     });
-});
+*/
 
 // GET /quote/{id} page
 router.get('/:id', function(req, res, next) {
     const quoteID = req.params.id;
 
-    Quote.findOne({_id: quoteID}, 'text creator by year public').exec((err, quote) => {
-        if (err) {
+    res.locals.dbPool
+    .connect()
+    .then(client => {
+        return client
+        .query('SELECT * FROM quotes WHERE id = $1', [quoteID])
+        .then(query => {
+            client.release()
+            let quote = query.rows;
+            if (quote[0]) {
+                res.status(200).json({
+                    quote: quote[0]
+                });
+            } else {
+                res.status(404).json({
+                    error: true,
+                    message: 'Quote not found'
+                });
+            }
+        })
+        .catch(err => {
+            client.release()
+            console.log(err.stack)
             res.status(500).json({
                 error: true,
                 message: 'Internal Server Error'
             });
-            return;
-        }
-
-        // Send the found quote
-        if (quote) {
-            res.status(200).json({
-                quote: quote
-            })
-        } else {
-            res.status(404).json({
-                error: true,
-                message: 'Quote not found'
-            })
-        }
-    });
-
+        })
+    })
 });
 
 // Authenticated route middleman verification
@@ -165,9 +189,9 @@ const authenticate = (req, res, next) => {
             });
             return;
         } 
-
         // Add the user ID to the req
         res.locals.userID = decoded.userID;
+
         // End the middleware function and move to the authorised routes
         next();
     } catch (err) {
@@ -189,69 +213,64 @@ router.post("/create", function(req, res, next) {
     if (req.body.public) {
         public = true;
     }
-    // Check that the quote doesnt already exist
-        // Check whether an extremely similar quote exists
-
-    let newQuoteValues = {
+    let newQuote = {
         text: text,
         by: by,
-        creator: res.locals.userID,
+        year: year,
         public: public,
-        year: year
-    }
+        creator: res.locals.userID
+    };
+    // TODO: Check that the quote doesnt already exist
+        // Check whether an extremely similar quote exists
 
-    // Remove all undefined values from the new quote
-    Object.keys(newQuoteValues).forEach(key => newQuoteValues[key] === undefined && delete newQuoteValues[key]);
-
-    // Create the new quote
-    let newQuote = new Quote(newQuoteValues);
-
-    newQuote.save(function (err, quote) {
-        if (err) {
-            console.log(err);
+    // Insert new quote
+    res.locals.dbPool
+    .connect()
+    .then(client => {
+        return client
+        .query('INSERT INTO quotes (text, by, year, creator, public) VALUES ($1, $2, $3, $4, $5);', [text, by, year, res.locals.userID, public])
+        .then(query => {
+            client.release();
+            res.status(200).json({
+                inserted: true,
+                quote: newQuote
+            });
+            return;     
+        })
+        .catch(err => {
+            client.release();
+            console.log(err.stack)
             res.status(500).json({
                 error: true,
                 message: "Internal Server Error"
             });
-            return;
-        }
-
-        res.status(200).json({
-            inserted: true,
-            quote: quote
         });
     });
 });
-/*
-// POST request to list all the quotes from a user
-router.post("/list", function(req, res, next) {
-    let listingUser = req.body.user;
-    if (!listingUser) {
-        listingUser = res.locals.userID;
-    }
-
-
-});
-*/
 
 // GET all the quotes created by a given user ID. The user ID is stored in the provided token
 router.get('/user/all', function(req, res, next) {
     const user = res.locals.userID;
 
-    Quote.find({creator: user}).exec((err, quotes) => {
-        if (err) {
-            console.log(err);
+    res.locals.dbPool
+    .connect()
+    .then(client => {
+        return client
+        .query('SELECT * FROM quotes WHERE creator = $1', [user])
+        .then(query => {
+            client.release()
+            res.status(200).json({
+                user: user,
+                quotes: query.rows
+            });
+        })
+        .catch(err => {
+            client.release()
+            console.log(err.stack)
             res.status(500).json({
                 error: true,
                 message: "Internal Server Error"
             });
-            return;
-        }
-
-        // Quotes have been located
-        res.status(200).json({
-            user: user,
-            quotes: quotes
         });
     });
 });
@@ -267,38 +286,41 @@ router.use('/:modification(edit|delete)/:id', (req, res, next) => {
         return;
     }
 
-    Quote.findOne({_id: quoteID}, 'creator').exec((err, quote) => {
-        if (err) {
-            console.log(err);
+    res.locals.dbPool
+    .connect()
+    .then(client => {
+        return client
+        .query('SELECT creator FROM quotes WHERE id = $1', [quoteID])
+        .then(query => {
+            client.release();
+            let quote = query.rows[0];
+            if(quote) {
+                // Verify the obtained data matches the request
+                if (quote.creator !== res.locals.userID) {
+                    res.status(401).json({
+                        error: true,
+                        message: 'Unauthorized action'
+                    });
+                    return;
+                } else {
+                    next();
+                }
+            } else {
+                res.status(404).json({
+                    error: true,
+                    message: 'Quote not found'
+                });
+                return;
+            }
+        })
+        .catch(err => {
+            client.release();
+            console.log(err.stack)
             res.status(500).json({
                 error: true,
                 message: 'Internal Server Error'
             });
-            return;
-        }
-
-        // Check if an object was actually returned
-        if (quote === null) {
-            res.status(404).json({
-                error: true,
-                message: 'Quote not found'
-            });
-            return;
-        }
-
-        // Verify the obtained data matches the request
-        if (quote.creator !== res.locals.userID) {
-            res.status(401).json({
-                error: true,
-                message: 'Unauthorized action'
-            });
-            return;
-        }
-
-        // The user must own the data they are trying to modify
-        if (!(res.headersSent)) {
-            next();
-        }
+        });
     });
 });
 
@@ -312,33 +334,27 @@ router.delete('/delete/:id', (req, res, next) => {
         });
     }
 
-    Quote.findOneAndRemove({_id: quoteID}).exec((err, quote) => {
-        if (err) {
-            console.log(err);
+    res.locals.dbPool
+    .connect()
+    .then(client => {
+        return client
+        .query('DELETE FROM quotes WHERE id = $1', [quoteID])
+        .then(query => {
+            client.release()
+            res.status(200).json({
+                deleted: true,
+                quote: quoteID
+            });
+        })
+        .catch(err => {
+            client.release()
+            console.log(err.stack)
             res.status(500).json({
                 error: true,
                 message: 'Internal Server Error'
             });
-            return;
-        }
-
-        // No quote has been deleted
-            // NOTE: This if should never be TRUE as the ownership middleware checks that the quoteID is always valid
-        if (quote == null) {
-            res.status(404).json({
-                error: true,
-                deleted: false,
-                message: 'Quote Not Found'
-            });
-            return;
-        }
-
-        res.status(200).json({
-            deleted: true,
-            quote: quote
-        });
-        return;
-    });
+        })
+    })
 });
 
 // POST Edit a quote
@@ -356,23 +372,27 @@ router.post('/edit/:id', (req, res, next) => {
         public: newPub
     };
 
-    // Remove all undefined values from the new quote
-    Object.keys(newQuote).forEach(key => newQuote[key] === undefined && delete newQuote[key]);
-
-    Quote.findOneAndUpdate({_id: req.params.id}, newQuote).exec((err, quote) => {
-        if (err) {
+    res.locals.dbPool
+    .connect()
+    .then(client => {
+        return client
+        .query('UPDATE quotes SET text = $1, by = $2, year = $3, public = $4 WHERE id = $5', [newText, newBy, newYear, newPub, req.params.id])
+        .then(query => {
+            client.release()
+            res.status(200).json({
+                updated: req.params.id,
+                values: newQuote
+            });
+        })
+        .catch(err => {
+            client.release()
+            console.log(err.stack)
             res.status(500).json({
                 error: true,
                 message: 'Internal Server Error'
             });
-            return;
-        }
-
-        res.status(200).json({
-            updated: quote,
-            values: newQuote
-        });
-    });
+        })
+    })
 });
 
 

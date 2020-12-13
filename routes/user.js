@@ -54,9 +54,9 @@ router.post('/login', function(req, res, next) {
             // Generate token using SECRET_KEY
             const expiresIn = 60 * 60 * 24;
             const expiry = Math.floor(Date.now() / 1000) + expiresIn;
-            const userID = user._id;
+            const userID = user.id;
             const token = jwt.sign({userID, expiry}, process.env.SECRET_KEY);
-  
+
             // Send Token
             res.status(200).json({
               token_type: "Bearer",
@@ -81,8 +81,12 @@ router.post('/login', function(req, res, next) {
         }
       })
       .catch(err => {
-        client.release()
-        console.log(err.stack)
+        client.release();
+        console.log(err.stack);
+        res.status(500).json({
+          error: true,
+          message: "Internal Server Error"
+        });
       });
   })
 });
