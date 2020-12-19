@@ -46,7 +46,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // DB Stuff
 // Let the webapp call to create Pool requests in Postgres
 const dbPool = new Pool({
-  dbConnectionURL,
+  connectionString: dbConnectionURL
 });
 // Pass dbPool down the middleware stack
 app.use(function (req, res, next) {
