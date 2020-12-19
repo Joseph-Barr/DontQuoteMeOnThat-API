@@ -40,6 +40,13 @@ router.get('/', function(req, res, next) {
                 });
                 return handleError(err); 
             });
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: true,
+                message: "Internal Server Error"
+            });
         });
         
     } else {
@@ -62,6 +69,13 @@ router.get('/', function(req, res, next) {
                     error: true,
                     message: "Internal Server Error"
                 });
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: true,
+                message: "Internal Server Error"
             });
         });
     }
@@ -147,6 +161,13 @@ router.get('/:id', function(req, res, next) {
             });
         })
     })
+    .catch(err => {
+        console.log(err);
+        res.status(500).json({
+            error: true,
+            message: "Internal Server Error"
+        });
+    });
 });
 
 // Authenticated route middleman verification
@@ -245,6 +266,13 @@ router.post("/create", function(req, res, next) {
                 message: "Internal Server Error"
             });
         });
+    })
+    .catch(err => {
+        console.log(err);
+        res.status(500).json({
+            error: true,
+            message: "Internal Server Error"
+        });
     });
 });
 
@@ -321,7 +349,14 @@ router.use('/:modification(edit|delete)/:id', (req, res, next) => {
                 message: 'Internal Server Error'
             });
         });
-    });
+    })
+    .catch(err => {
+        console.log(err);
+        res.status(500).json({
+            error: true,
+            message: "Internal Server Error"
+        });
+    });;
 });
 
 // DELETE a quote
@@ -355,6 +390,13 @@ router.delete('/delete/:id', (req, res, next) => {
             });
         })
     })
+    .catch(err => {
+        console.log(err);
+        res.status(500).json({
+            error: true,
+            message: "Internal Server Error"
+        });
+    });
 });
 
 // POST Edit a quote
@@ -393,9 +435,13 @@ router.post('/edit/:id', (req, res, next) => {
             });
         })
     })
+    .catch(err => {
+        console.log(err);
+        res.status(500).json({
+            error: true,
+            message: "Internal Server Error"
+        });
+    });
 });
-
-
-
 
 module.exports = router;

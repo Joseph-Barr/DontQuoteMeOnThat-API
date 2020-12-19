@@ -89,6 +89,13 @@ router.post('/login', function(req, res, next) {
         });
       });
   })
+  .catch(err => {
+    console.log(err);
+    res.status(500).json({
+        error: true,
+        message: "Internal Server Error"
+    });
+});
 });
 
 // POST Register route
